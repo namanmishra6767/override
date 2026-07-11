@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVERRIDE // Open-World Stealth District (Enhanced Build)</title>
+    <style>
+        :root {
+            --bg-color: #020205;
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff0055;
+            --neon-purple: #8257e5;
+            --neon-amber: #ffaa00;
+            --terminal-green: #33ff33;
+            --panel-bg: rgba(4, 4, 10, 0.95);
+            --blur-fx: blur(8px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            background-color: #010103;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
+        }
+
+        #crt-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 2, 6, 0.96);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: var(--blur-fx);
+        }
+
+        .hidden { display: none !important; }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 20px var(--neon-cyan);
+            margin-bottom: 20px;
+            letter-spacing: 6px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-amber);
+            text-shadow: 0 0 12px var(--neon-amber);
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+
+        p {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            max-width: 650px;
+            margin-bottom: 30px;
+            color: #a0aec0;
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 14px 35px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+            margin: 8px;
+        }
+
+        .btn:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 30px var(--neon-cyan);
+            font-weight: bold;
+        }
+
+        .btn-secondary {
+            border-color: var(--neon-purple);
+            color: var(--neon-purple);
+        }
+        .btn-secondary:hover {
+            background: var(--neon-purple);
+            color: #fff;
+            box-shadow: 0 0 30px var(--neon-purple);
+        }
+
+        /* Settings Matrix Interface */
+        .settings-panel {
+            background: rgba(10, 10, 22, 0.85);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 25px;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 500px;
+            text-align: left;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            color: #e2e8f0;
+        }
+
+        .setting-row label {
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        input[type="range"] {
+            appearance: none;
+            background: #1a1a3a;
+            height: 6px;
+            border: 1px solid var(--neon-cyan);
+            outline: none;
+            width: 160px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-cyan);
+        }
+
+        .checkbox-container {
+            position: relative;
+            cursor: pointer;
+            display: inline-block;
+            width: 45px;
+            height: 22px;
+            background: #1a1a3a;
+            border: 1px solid var(--neon-purple);
+        }
+
+        .checkbox-container input { opacity: 0; width: 0; height: 0; }
+
+        .slider-toggle {
+            position: absolute;
+            top: 2px; left: 2px; right: 2px; bottom: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: 0.2s;
+            width: 16px;
+            height: 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        input:checked + .slider-toggle {
+            transform: translateX(21px);
+            background: var(--neon-purple);
+            box-shadow: 0 0 8px var(--neon-purple);
+        }
+
+        #hud-layout {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            right: 25px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .hud-module {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            padding: 15px 25px;
+            font-size: 0.95rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.3);
+            backdrop-filter: var(--blur-fx);
+            line-height: 1.5;
+        }
+
+        .meter-container {
+            display: inline-block;
+            width: 110px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--neon-cyan);
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        .meter-fill {
+            width: 100%;
+            height: 100%;
+            background: var(--neon-cyan);
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="crt-lines"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud-layout">
+        <div class="hud-module" id="hud-left">
+            SYSTEM STATUS: <span id="hud-mode" style="font-weight:bold; color:var(--terminal-green);">SYSTEM_READY</span><br>
+            EQUIPPED HARDWARE: <span id="hud-active-weapon" style="color:var(--neon-magenta)">PING_FLOOD</span><br>
+            INTEGRITY: <span id="hud-integrity">100</span>% | PHASE MATRIX: <div class="meter-container"><div id="ghost-meter-fill" style="background:var(--neon-purple); width:100%;"></div></div>
+        </div>
+        <div class="hud-module" id="hud-right" style="color: var(--neon-amber); border-color: var(--neon-amber);">
+            CORES TO COMPROMISE: <span id="hud-terminals">4 / 4</span><br>
+            THREAT MATRIX PROFILE: <span id="hud-alert-status" style="font-weight: bold; color: var(--terminal-green);">STEALTH_COVERT</span><br>
+            <span style="font-size:0.75rem; color:#888;">PRESS [ESC] OR [P] TO PAUSE</span>
+        </div>
+    </div>
+
+    <div id="menu-overlay" class="menu-overlay">
+        <h1>OVERRIDE // METROPOLIS</h1>
+        <p>Infiltrate a completely re-engineered tactical district layout. Watch patrol paths via field-of-view radars. Evade detection using wide avenue grids or hit <strong>Ghost Phase Walk [G]</strong> to slide smoothly through walls. Hot-swap weapons with <strong>[1, 2]</strong> to balance acoustic profiles.</p>
+        
+        <div class="settings-panel">
+            <div class="setting-row">
+                <label>MASTER COGNITIVE AUDIO VOL</label>
+                <input type="range" id="setting-vol" min="0" max="1" step="0.05" value="0.4">
+            </div>
+            <div class="setting-row">
+                <label>CRT HARWARE SCREEN EMULATION</label>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="setting-crt" checked>
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <label>KINETIC DISPLACEMENT IMPACT (SHAKE)</label>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="setting-shake" checked>
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+        </div>
+
+        <button class="btn" id="inject-process-btn">Inject Core Framework</button>
+    </div>
+
+    <div id="pause-overlay" class="menu-overlay hidden">
+        <h2>SYSTEM PENDING // INFILTRATION_PAUSED</h2>
+        <p>The local sub-grid runtime environment has been successfully frozen in volatile memory.</p>
+        
+        <div class="settings-panel">
+            <div class="setting-row">
+                <label>MASTER COGNITIVE AUDIO VOL</label>
+                <input type="range" id="pause-setting-vol" min="0" max="1" step="0.05" value="0.4">
+            </div>
+            <div class="setting-row">
+                <label>CRT HARWARE SCREEN EMULATION</label>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="pause-setting-crt" checked>
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <label>KINETIC DISPLACEMENT IMPACT (SHAKE)</label>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="pause-setting-shake" checked>
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+        </div>
+
+        <div style="display:flex;">
+            <button class="btn" id="resume-btn">Resume Process</button>
+            <button class="btn btn-secondary" id="abort-btn">Abort & Reset Grid</button>
+        </div>
+    </div>
+
+    <div id="gameover-overlay" class="menu-overlay hidden">
+        <h1 style="color: var(--neon-magenta);">CRITICAL_EXCEPTION: SIGSEGV</h1>
+        <p>Your physical layer was successfully localized and purged by security drone mainframes.</p>
+        <button class="btn" id="restart-fail-btn">Reallocate Memory Stack</button>
+    </div>
+
+    <div id="victory-overlay" class="menu-overlay hidden">
+        <h1 style="color: var(--terminal-green);">DISTRICT_OVERRIDDEN</h1>
+        <p>All core computational mainframe firewalls thoroughly rewritten. Sector status: Subverted.</p>
+        <button class="btn" id="restart-win-btn">Infiltrate Neighboring Sector</button>
+    </div>
+</div>
+
+<script>
+    // --- SETTINGS MATRIX CONTROL LOGIC ---
+    const CONFIG = {
+        volume: 0.4,
+        crtEnabled: true,
+        shakeEnabled: true
+    };
+
+    function syncSettingsUI(source) {
+        if (source === 'menu') {
+            CONFIG.volume = parseFloat(document.getElementById('setting-vol').value);
+            CONFIG.crtEnabled = document.getElementById('setting-crt').checked;
+            CONFIG.shakeEnabled = document.getElementById('setting-shake').checked;
+
+            document.getElementById('pause-setting-vol').value = CONFIG.volume;
+            document.getElementById('pause-setting-crt').checked = CONFIG.crtEnabled;
+            document.getElementById('pause-setting-shake').checked = CONFIG.shakeEnabled;
+        } else {
+            CONFIG.volume = parseFloat(document.getElementById('pause-setting-vol').value);
+            CONFIG.crtEnabled = document.getElementById('pause-setting-crt').checked;
+            CONFIG.shakeEnabled = document.getElementById('pause-setting-shake').checked;
+
+            document.getElementById('setting-vol').value = CONFIG.volume;
+            document.getElementById('setting-crt').checked = CONFIG.crtEnabled;
+            document.getElementById('setting-shake').checked = CONFIG.shakeEnabled;
+        }
+
+        // Apply immediate visual effects
+        document.getElementById('crt-lines').style.opacity = CONFIG.crtEnabled ? "1" : "0";
+        if(audioEngine) audioEngine.updateVolume(CONFIG.volume);
+    }
+
+    // Connect event links for live updates
+    ['setting-vol', 'setting-crt', 'setting-shake'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => syncSettingsUI('menu'));
+    });
+    ['pause-setting-vol', 'pause-setting-crt', 'pause-setting-shake'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => syncSettingsUI('pause'));
+    });
+
+    // --- SYNTHETIC WEB AUDIO PIPELINE ---
+    class NeonAudioPipeline {
+        constructor() { this.ctx = null; this.masterGain = null; }
+        init() { 
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.connect(this.ctx.destination);
+                this.updateVolume(CONFIG.volume);
+            } 
+        }
+        updateVolume(val) {
+            if (this.masterGain && this.ctx) {
+                this.masterGain.gain.setValueAtTime(val, this.ctx.currentTime);
+            }
+        }
+        emit(profile) {
+            if (!this.ctx) return;
+            const time = this.ctx.currentTime;
+            const oscillator = this.ctx.createOscillator();
+            const volumeNode = this.ctx.createGain();
+            oscillator.connect(volumeNode); 
+            volumeNode.connect(this.masterGain);
+            volumeNode.gain.setValueAtTime(0.25, time);
+
+            if (profile === 'ping_flood') {
+                oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(750, time);
+                oscillator.frequency.exponentialRampToValueAtTime(150, time + 0.1);
+                volumeNode.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                oscillator.start(time); oscillator.stop(time + 0.1);
+            } else if (profile === 'stack_pump') {
+                oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(220, time);
+                oscillator.frequency.linearRampToValueAtTime(50, time + 0.22);
+                volumeNode.gain.setValueAtTime(0.4, time);
+                volumeNode.gain.exponentialRampToValueAtTime(0.01, time + 0.22);
+                oscillator.start(time); oscillator.stop(time + 0.22);
+            } else if (profile === 'ghost_on') {
+                oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(300, time);
+                oscillator.frequency.exponentialRampToValueAtTime(1200, time + 0.3);
+                volumeNode.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+                oscillator.start(time); oscillator.stop(time + 0.3);
+            } else if (profile === 'ghost_off') {
+                oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(900, time);
+                oscillator.frequency.linearRampToValueAtTime(200, time + 0.25);
+                volumeNode.gain.exponentialRampToValueAtTime(0.01, time + 0.25);
+                oscillator.start(time); oscillator.stop(time + 0.25);
+            } else if (profile === 'assassinate') {
+                oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(100, time);
+                oscillator.frequency.linearRampToValueAtTime(30, time + 0.15);
+                volumeNode.gain.setValueAtTime(0.5, time);
+                volumeNode.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+                oscillator.start(time); oscillator.stop(time + 0.15);
+            } else if (profile === 'alert') {
+                oscillator.type = 'square'; oscillator.frequency.setValueAtTime(880, time);
+                oscillator.frequency.setValueAtTime(1100, time + 0.08);
+                volumeNode.gain.setValueAtTime(0.15, time);
+                volumeNode.gain.exponentialRampToValueAtTime(0.01, time + 0.16);
+                oscillator.start(time); oscillator.stop(time + 0.16);
+            }
+        }
+    }
+    const audioEngine = new NeonAudioPipeline();
+
+    // --- HIGHLY STRUCTURED CITY GRID MAP GENERATOR ---
+    // Replaces the broken box approach with clear tactical street layouts & wide corridors
+    function generateOpenDistrict(cols, rows) {
+        const layoutGrid = Array(rows).fill(null).map(() => Array(cols).fill(0));
+        
+        // Build perimeter defensive walls
+        for(let r=0; r<rows; r++) { layoutGrid[r][0] = 1; layoutGrid[r][cols-1] = 1; }
+        for(let c=0; c<cols; c++) { layoutGrid[0][c] = 1; layoutGrid[rows-1][c] = 1; }
+
+        // Define predictable layout blocks (Every 6th tile is a wide thoroughfare)
+        const streetIntervalX = 6;
+        const streetIntervalY = 5;
+
+        for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < cols - 1; c++) {
+                // Determine if this cell is located on a guaranteed transit street or crossroad
+                const isOnStreetX = (c % streetIntervalX === 0);
+                const isOnStreetY = (r % streetIntervalY === 0);
+
+                if (isOnStreetX || isOnStreetY) {
+                    layoutGrid[r][c] = 0; // Absolute space clearance for drone patrols
+                } else {
+                    // Fill building interiors with solid structures
+                    layoutGrid[r][c] = 1;
+                }
+            }
+        }
+
+        // Carve clear tactical pathways and courtyards within the skyscraper blocks to avoid dead block shapes
+        for (let r = 2; r < rows - 2; r += streetIntervalY) {
+            for (let c = 2; c < cols - 2; c += streetIntervalX) {
+                // Punch open a 2x2 local hub center inside the solid zone
+                if (Math.random() < 0.75) {
+                    layoutGrid[r + 1][c + 1] = 0;
+                    layoutGrid[r + 2][c + 1] = 0;
+                    // Provide an integration alley out to the main roads
+                    layoutGrid[r + 1][c + 2] = 0;
+                }
+            }
+        }
+
+        // Clean up player starting area quadrant completely to safeguard immediate boots
+        for (let r = 1; r < 5; r++) {
+            for (let c = 1; c < 5; c++) {
+                layoutGrid[r][c] = 0;
+            }
+        }
+
+        return layoutGrid;
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentGameState = 'MENU'; // Runtimes: 'MENU', 'PLAYING', 'PAUSED', 'GAMEOVER', 'VICTORY'
+    let worldGrid = [];
+    const blockCellSize = 64;
+    let mainCamera = { x: 0, y: 0 };
+    let engineScreenShakeMagnitude = 0;
+    
+    let mainPlayer;
+    let corporateDrones = [];
+    let firedProjectiles = [];
+    let physicalParticles = [];
+    let mainframeTerminals = [];
+    let neonBillboards = [];
+    let targetedAssassinationObjective = null;
+    let environmentalAcousticWaves = [];
+    let ghostTrails = [];
+
+    const physicalKeyMapping = { w: false, a: false, s: false, d: false };
+    let mouseCoordinates = { x: 0, y: 0, worldX: 0, worldY: 0 };
+
+    function triggerVisualDisplacement(val) {
+        if (CONFIG.shakeEnabled) engineScreenShakeMagnitude = Math.max(engineScreenShakeMagnitude, val);
+    }
+
+    // --- LINE-OF-SIGHT RAYCAST ALGORITHM ---
+    function executeLineOfSightRaycast(x1, y1, x2, y2) {
+        const deltaDistance = Math.hypot(x2 - x1, y2 - y1);
+        const stepsCount = Math.ceil(deltaDistance / 12);
+        for (let step = 1; step < stepsCount; step++) {
+            const interpolationRatio = step / stepsCount;
+            const rayX = x1 + (x2 - x1) * interpolationRatio;
+            const rayY = y1 + (y2 - y1) * interpolationRatio;
+            const cellCol = Math.floor(rayX / blockCellSize);
+            const cellRow = Math.floor(rayY / blockCellSize);
+            if (worldGrid[cellRow] && worldGrid[cellRow][cellCol] === 1) return false;
+        }
+        return true;
+    }
+
+    const WEAPON_PROFILES = {
+        'PING_FLOOD': { name: 'PING_FLOOD [COVERT]', damage: 15, fireInterval: 180, speed: 12, color: '#00f3ff', spread: 0.02, projectiles: 1, soundRadius: 110, holsterTime: 200 },
+        'STACK_PUMP': { name: 'STACK_PUMP [LOUD]', damage: 12, fireInterval: 650, speed: 10, color: '#ff0055', spread: 0.25, projectiles: 6, soundRadius: 380, holsterTime: 400 }
+    };
+
+    // --- PLAYER DESIGN COMPONENT ---
+    class PlayerStructure {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.radius = 14;
+            this.speed = 3.8; this.angle = 0; this.hp = 100;
+            this.combatState = 'READY';
+            this.activeWeaponKey = 'PING_FLOOD';
+            this.lastFiredTimestamp = 0;
+            this.stateTransitionTime = 0;
+            this.ghostActive = false;
+            this.ghostEnergy = 100;
+        }
+        update() {
+            let speedModifier = this.speed;
+            if (this.ghostActive) {
+                speedModifier *= 1.35;
+                this.ghostEnergy -= 0.4;
+                if (this.ghostEnergy <= 0) this.toggleGhostPhase(false);
+            } else if (this.ghostEnergy < 100) {
+                this.ghostEnergy += 0.15;
+            }
+
+            document.getElementById('ghost-meter-fill').style.width = `${this.ghostEnergy}%`;
+
+            if (this.combatState !== 'HOLSTERING' && this.combatState !== 'EQUIPPING') {
+                let deltaX = 0, deltaY = 0;
+                if (physicalKeyMapping.w) deltaY -= speedModifier; if (physicalKeyMapping.s) deltaY += speedModifier;
+                if (physicalKeyMapping.a) deltaX -= speedModifier; if (physicalKeyMapping.d) deltaX += speedModifier;
+                
+                if (deltaX !== 0 && deltaY !== 0) { deltaX *= 0.7071; deltaY *= 0.7071; }
+                this.executeMovementCollisionVerification(deltaX, 0);
+                this.executeMovementCollisionVerification(0, deltaY);
+            } else {
+                if (Date.now() > this.stateTransitionTime) this.combatState = 'READY';
+            }
+
+            this.angle = Math.atan2(mouseCoordinates.worldY - this.y, mouseCoordinates.worldX - this.x);
+        }
+        executeMovementCollisionVerification(mx, my) {
+            const targetX = this.x + mx;
+            const targetY = this.y + my;
+            
+            if (this.ghostActive) {
+                if (targetY > blockCellSize && targetY < (worldGrid.length - 1) * blockCellSize &&
+                    targetX > blockCellSize && targetX < (worldGrid[0].length - 1) * blockCellSize) {
+                    this.x = targetX; this.y = targetY;
+                }
+                return;
+            }
+
+            const collisionBuffer = this.radius - 2;
+            const analyticalPoints = [
+                {x: targetX - collisionBuffer, y: targetY - collisionBuffer},
+                {x: targetX + collisionBuffer, y: targetY - collisionBuffer},
+                {x: targetX - collisionBuffer, y: targetY + collisionBuffer},
+                {x: targetX + collisionBuffer, y: targetY + collisionBuffer}
+            ];
+            let clearPass = true;
+            for (const pt of analyticalPoints) {
+                const checkCol = Math.floor(pt.x / blockCellSize);
+                const checkRow = Math.floor(pt.y / blockCellSize);
+                if (worldGrid[checkRow] && worldGrid[checkRow][checkCol] === 1) {
+                    clearPass = false; break;
+                }
+            }
+            if (clearPass) { this.x = targetX; this.y = targetY; }
+        }
+        toggleGhostPhase(forceState = null) {
+            const nextGhostState = forceState !== null ? forceState : !this.ghostActive;
+            if (nextGhostState === this.ghostActive) return;
+            if (nextGhostState && this.ghostEnergy < 25) return;
+
+            this.ghostActive = nextGhostState;
+            if (this.ghostActive) {
+                this.combatState = 'READY';
+                audioEngine.emit('ghost_on');
+                for(let i=0; i<12; i++) physicalParticles.push(new EngineParticle(this.x, this.y, '#8257e5'));
+            } else {
+                audioEngine.emit('ghost_off');
+                const currentCol = Math.floor(this.x / blockCellSize);
+                const currentRow = Math.floor(this.y / blockCellSize);
+                if (worldGrid[currentRow] && worldGrid[currentRow][currentCol] === 1) {
+                    this.hp -= 35;
+                    triggerVisualDisplacement(15);
+                    for(let i=0; i<25; i++) physicalParticles.push(new EngineParticle(this.x, this.y, '#ff0055'));
+                }
+            }
+        }
+        executeWeaponSwap(targetKey) {
+            if (this.activeWeaponKey === targetKey) return;
+            if (this.combatState === 'HOLSTERING' || this.combatState === 'EQUIPPING') return;
+
+            if (this.ghostActive) {
+                this.activeWeaponKey = targetKey;
+                return;
+            }
+
+            const profile = WEAPON_PROFILES[this.activeWeaponKey];
+            this.combatState = 'HOLSTERING';
+            this.stateTransitionTime = Date.now() + profile.holsterTime;
+            
+            setTimeout(() => {
+                this.activeWeaponKey = targetKey;
+                this.combatState = 'EQUIPPING';
+                this.stateTransitionTime = Date.now() + WEAPON_PROFILES[targetKey].holsterTime;
+            }, profile.holsterTime);
+        }
+        draw() {
+            if (this.ghostActive && Math.random() < 0.45) {
+                ghostTrails.push({ x: this.x, y: this.y, angle: this.angle, alpha: 0.5 });
+            }
+
+            ctx.save();
+            ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+            
+            const coreColor = this.ghostActive ? '#8257e5' : '#00f3ff';
+            ctx.shadowBlur = this.ghostActive ? 25 : 15; ctx.shadowColor = coreColor;
+            ctx.fillStyle = coreColor;
+            ctx.globalAlpha = this.ghostActive ? 0.35 : 1.0;
+
+            ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            if (this.combatState === 'HOLSTERING') ctx.fillStyle = '#ffaa00';
+            ctx.fillRect(4, -2, 10, 4);
+            ctx.restore();
+        }
+    }
+
+    // --- SECURITY DRONE AUTOMATON (SLIDING CORNER COLLISIONS) ---
+    class SecurityAutomaton {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.radius = 14; this.speed = 1.4;
+            this.hp = 45; this.statusMode = 'PATROL';
+            this.visionScopeRange = 260;
+            this.fieldOfViewWedge = Math.PI / 2.1;
+            
+            const operationalVectors = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
+            const targetedVector = operationalVectors[Math.floor(Math.random() * operationalVectors.length)];
+            this.vx = targetedVector.x * this.speed; this.vy = targetedVector.y * this.speed;
+            this.angle = Math.atan2(this.vy, this.vx);
+            this.lastFiredTime = 0;
+        }
+
+        executeMovementWithCollision(mx, my) {
+            const buffer = this.radius - 2;
+
+            // X-axis collision validation
+            let targetX = this.x + mx;
+            let hitWallX = false;
+            const testPointsX = [
+                { x: targetX + Math.sign(mx) * buffer, y: this.y - buffer },
+                { x: targetX + Math.sign(mx) * buffer, y: this.y + buffer }
+            ];
+            for (const pt of testPointsX) {
+                const c = Math.floor(pt.x / blockCellSize);
+                const r = Math.floor(pt.y / blockCellSize);
+                if (worldGrid[r] && worldGrid[r][c] === 1) { hitWallX = true; break; }
+            }
+            if (!hitWallX) {
+                this.x = targetX;
+            } else if (this.statusMode === 'PATROL') {
+                this.vx *= -1; this.angle = Math.atan2(this.vy, this.vx);
+            }
+
+            // Y-axis collision validation
+            let targetY = this.y + my;
+            let hitWallY = false;
+            const testPointsY = [
+                { x: this.x - buffer, y: targetY + Math.sign(my) * buffer },
+                { x: this.x + buffer, y: targetY + Math.sign(my) * buffer }
+            ];
+            for (const pt of testPointsY) {
+                const c = Math.floor(pt.x / blockCellSize);
+                const r = Math.floor(pt.y / blockCellSize);
+                if (worldGrid[r] && worldGrid[r][c] === 1) { hitWallY = true; break; }
+            }
+            if (!hitWallY) {
+                this.y = targetY;
+            } else if (this.statusMode === 'PATROL') {
+                this.vy *= -1; this.angle = Math.atan2(this.vy, this.vx);
+            }
+        }
+
+        update() {
+            if (this.statusMode === 'PATROL') {
+                this.executeMovementWithCollision(this.vx, this.vy);
+
+                if (!mainPlayer.ghostActive && this.evaluateTargetInVisionCone()) {
+                    this.statusMode = 'ALERT';
+                    audioEngine.emit('alert');
+                }
+            } else if (this.statusMode === 'ALERT') {
+                this.angle = Math.atan2(mainPlayer.y - this.y, mainPlayer.x - this.x);
+                const deltaDist = Math.hypot(mainPlayer.x - this.x, mainPlayer.y - this.y);
+
+                if (mainPlayer.ghostActive) {
+                    this.statusMode = 'PATROL';
+                    this.vx = Math.cos(this.angle) * this.speed;
+                    this.vy = Math.sin(this.angle) * this.speed;
+                    return;
+                }
+
+                if (deltaDist < 440 && executeLineOfSightRaycast(this.x, this.y, mainPlayer.x, mainPlayer.y)) {
+                    let mx = Math.cos(this.angle) * (this.speed * 1.45);
+                    let my = Math.sin(this.angle) * (this.speed * 1.45);
+                    this.executeMovementWithCollision(mx, my);
+
+                    const currentNow = Date.now();
+                    if (currentNow - this.lastFiredTime > 900) {
+                        this.lastFiredTime = currentNow;
+                        firedProjectiles.push(new WeaponBolt(this.x, this.y, this.angle, 6.5, 12, '#ff0055', false));
+                        audioEngine.emit('alert');
+                    }
+                } else if (deltaDist > 500) {
+                    this.statusMode = 'PATROL';
+                    this.vx = Math.cos(this.angle) * this.speed;
+                    this.vy = Math.sin(this.angle) * this.speed;
+                }
+            }
+        }
+        evaluateTargetInVisionCone() {
+            const dx = mainPlayer.x - this.x;
+            const dy = mainPlayer.y - this.y;
+            const targetDistance = Math.hypot(dx, dy);
+            if (targetDistance > this.visionScopeRange) return false;
+
+            const trackingAngle = Math.atan2(dy, dx);
+            let angularDifference = trackingAngle - this.angle;
+            angularDifference = Math.atan2(Math.sin(angularDifference), Math.cos(angularDifference));
+
+            if (Math.abs(angularDifference) <= this.fieldOfViewWedge / 2) {
+                return executeLineOfSightRaycast(this.x, this.y, mainPlayer.x, mainPlayer.y);
+            }
+            return false;
+        }
+        drawVisionWedge() {
+            ctx.save();
+            ctx.fillStyle = this.statusMode === 'ALERT' ? 'rgba(255, 0, 85, 0.12)' : 'rgba(255, 170, 0, 0.05)';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.arc(this.x, this.y, this.visionScopeRange, this.angle - this.fieldOfViewWedge/2, this.angle + this.fieldOfViewWedge/2);
+            ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+            const operationalColor = this.statusMode === 'ALERT' ? '#ff0055' : '#ffaa00';
+            ctx.shadowBlur = 12; ctx.shadowColor = operationalColor; ctx.fillStyle = operationalColor;
+            
+            ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#010103'; ctx.fillRect(4, -3, 4, 6);
+            ctx.restore();
+        }
+    }
+
+    // --- MAIN CORE RUNTIME STRUCTS ---
+    class MainframeNode {
+        constructor(x, y, designator) { this.x = x; this.y = y; this.radius = 20; this.hacked = false; this.pulseTimeline = 0; this.designator = designator; }
+        update() { this.pulseTimeline += 0.06; }
+        draw() {
+            if (this.hacked) return;
+            ctx.save();
+            ctx.shadowBlur = 15 + Math.sin(this.pulseTimeline) * 6; ctx.shadowColor = '#ffaa00';
+            ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 2.5; ctx.fillStyle = 'rgba(255, 170, 0, 0.08)';
+            ctx.strokeRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            ctx.fillRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+            ctx.fillText(this.designator, this.x, this.y + 4);
+            ctx.restore();
+        }
+    }
+
+    class WeaponBolt {
+        constructor(x, y, angle, speed, outputDamage, hexColor, playerFired) {
+            this.x = x; this.y = y; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+            this.radius = 4; this.damage = outputDamage; this.color = hexColor; this.playerFired = playerFired; this.flaggedRemoval = false;
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy;
+            const c = Math.floor(this.x / blockCellSize);
+            const r = Math.floor(this.y / blockCellSize);
+            if (worldGrid[r] && worldGrid[r][c] === 1) {
+                this.flaggedRemoval = true;
+                for(let i=0; i<6; i++) physicalParticles.push(new EngineParticle(this.x, this.y, this.color));
+            }
+        }
+        draw() {
+            ctx.save();
+            ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class EngineParticle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y; 
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 2.5 + 1;
+            this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+            this.lifeSpan = 1.0; this.decayRate = Math.random() * 0.05 + 0.02; this.color = color;
+        }
+        update() { this.x += this.vx; this.y += this.vy; this.lifeSpan -= this.decayRate; }
+        draw() {
+            ctx.save(); ctx.globalAlpha = this.lifeSpan; ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - 2, this.y - 2, 4, 4); ctx.restore();
+        }
+    }
+
+    // --- SETUP AND RESET PLATFORMS ---
+    function launchStealthDistrict() {
+        const columns = 32, rows = 24;
+        worldGrid = generateOpenDistrict(columns, rows);
+        mainPlayer = new PlayerStructure(blockCellSize * 1.5, blockCellSize * 1.5);
+        
+        corporateDrones = []; firedProjectiles = []; physicalParticles = []; 
+        mainframeTerminals = []; neonBillboards = []; targetedAssassinationObjective = null;
+        environmentalAcousticWaves = []; ghostTrails = []; engineScreenShakeMagnitude = 0;
+
+        // Position Terminal Objectives strategically at main intersection centers
+        mainframeTerminals.push(new MainframeNode((12) * blockCellSize + blockCellSize/2, (5) * blockCellSize + blockCellSize/2, "CORE_A"));
+        mainframeTerminals.push(new MainframeNode((24) * blockCellSize + blockCellSize/2, (5) * blockCellSize + blockCellSize/2, "CORE_B"));
+        mainframeTerminals.push(new MainframeNode((6) * blockCellSize + blockCellSize/2, (15) * blockCellSize + blockCellSize/2, "CORE_C"));
+        mainframeTerminals.push(new MainframeNode((24) * blockCellSize + blockCellSize/2, (20) * blockCellSize + blockCellSize/2, "CORE_D"));
+
+        // Scan the newly constructed map for safe structural air nodes to drop security forces
+        let secureStreetNodes = [];
+        for (let r = 1; r < rows - 1; r++) {
+            for (let c = 1; c < columns - 1; c++) {
+                if (worldGrid[r][c] === 0) {
+                    // Do not allow close spawns next to player origin profile quadrant
+                    if (Math.hypot(c - 1.5, r - 1.5) > 6) {
+                        secureStreetNodes.push({c: c, r: r});
+                    }
+                }
+            }
+        }
+
+        // Deploy drones on clear, open paths
+        for (let i = 0; i < 9 && secureStreetNodes.length > 0; i++) {
+            const index = Math.floor(Math.random() * secureStreetNodes.length);
+            const coords = secureStreetNodes.splice(index, 1)[0];
+            corporateDrones.push(new SecurityAutomaton(
+                coords.c * blockCellSize + blockCellSize / 2, 
+                coords.r * blockCellSize + blockCellSize / 2
+            ));
+        }
+
+        // Mount corporate advertising elements onto solid structures face-on
+        const firms = ['NEXUS_OS', 'SHIVA_SYS', 'KRONOS_NET', 'ORACLE_CORE'];
+        const hues = ['#00f3ff', '#ff0055', '#ffaa00', '#33ff33'];
+        for(let r = 1; r < worldGrid.length - 1; r++) {
+            for(let c = 1; c < worldGrid[0].length - 1; c++) {
+                if (worldGrid[r][c] === 1 && worldGrid[r+1][c] === 0 && Math.random() < 0.2) {
+                    neonBillboards.push({
+                        x: c * blockCellSize + blockCellSize/2, y: r * blockCellSize + blockCellSize - 5,
+                        text: firms[Math.floor(Math.random() * firms.length)],
+                        color: hues[Math.floor(Math.random() * hues.length)]
+                    });
+                }
+            }
+        }
+
+        refreshInterfaceHUD();
+        currentGameState = 'PLAYING';
+    }
+
+    function togglePauseSystem() {
+        if (currentGameState === 'PLAYING') {
+            currentGameState = 'PAUSED';
+            document.getElementById('pause-overlay').classList.remove('hidden');
+        } else if (currentGameState === 'PAUSED') {
+            currentGameState = 'PLAYING';
+            document.getElementById('pause-overlay').classList.add('hidden');
+        }
+    }
+
+    function refreshInterfaceHUD() {
+        const remaining = mainframeTerminals.filter(t => !t.hacked).length;
+        document.getElementById('hud-terminals').innerText = remaining > 0 ? `${remaining} / 4` : "SYSTEM COMPLETELY WEAKENED";
+        document.getElementById('hud-integrity').innerText = Math.max(0, Math.floor(mainPlayer.hp));
+        document.getElementById('hud-active-weapon').innerText = WEAPON_PROFILES[mainPlayer.activeWeaponKey].name;
+
+        if (mainPlayer.combatState === 'HOLSTERING') {
+            document.getElementById('hud-mode').innerText = "HARDWARE_HOLSTERING";
+            document.getElementById('hud-mode').style.color = 'var(--neon-amber)';
+        } else if (mainPlayer.combatState === 'EQUIPPING') {
+            document.getElementById('hud-mode').innerText = "HARDWARE_EQUIPPING";
+            document.getElementById('hud-mode').style.color = 'var(--neon-cyan)';
+        } else {
+            document.getElementById('hud-mode').innerText = mainPlayer.ghostActive ? "PHASE_WALK_ENGAGED" : "SYSTEM_READY";
+            document.getElementById('hud-mode').style.color = mainPlayer.ghostActive ? 'var(--neon-purple)' : 'var(--terminal-green)';
+        }
+        
+        const statusEl = document.getElementById('hud-alert-status');
+        const alertEngaged = corporateDrones.some(d => d.statusMode === 'ALERT');
+        if (alertEngaged) {
+            statusEl.innerText = "HOSTILES_ALERTED"; statusEl.style.color = 'var(--neon-magenta)';
+        } else {
+            statusEl.innerText = "STEALTH_COVERT"; statusEl.style.color = 'var(--terminal-green)';
+        }
+    }
+
+    // --- MAIN ENGINE LOOP ---
+    function runCoreTickEngine() {
+        mainPlayer.update();
+
+        for (let i = mainframeTerminals.length - 1; i >= 0; i--) {
+            const t = mainframeTerminals[i]; t.update();
+            if (!t.hacked && Math.hypot(mainPlayer.x - t.x, mainPlayer.y - t.y) < mainPlayer.radius + t.radius) {
+                t.hacked = true; refreshInterfaceHUD();
+                triggerVisualDisplacement(8);
+                for(let k=0; k<30; k++) physicalParticles.push(new EngineParticle(t.x, t.y, '#ffaa00'));
+            }
+        }
+
+        if (mainframeTerminals.filter(t => !t.hacked).length === 0) { 
+            currentGameState = 'VICTORY'; document.getElementById('victory-overlay').classList.remove('hidden'); 
+        }
+
+        targetedAssassinationObjective = null;
+        let tightestProximity = 36;
+
+        for (let i = corporateDrones.length - 1; i >= 0; i--) {
+            const d = corporateDrones[i]; d.update();
+            const dist = Math.hypot(mainPlayer.x - d.x, mainPlayer.y - d.y);
+
+            if (!mainPlayer.ghostActive && dist < mainPlayer.radius + d.radius) {
+                mainPlayer.hp -= 0.6; refreshInterfaceHUD();
+                if (mainPlayer.hp <= 0) { currentGameState = 'GAMEOVER'; document.getElementById('gameover-overlay').classList.remove('hidden'); }
+            }
+
+            if (d.statusMode === 'PATROL' && dist < tightestProximity && !d.evaluateTargetInVisionCone()) {
+                tightestProximity = dist; targetedAssassinationObjective = d;
+            }
+        }
+
+        for (let i = firedProjectiles.length - 1; i >= 0; i--) {
+            const b = firedProjectiles[i]; b.update(); if (b.flaggedRemoval) { firedProjectiles.splice(i, 1); continue; }
+
+            if (b.playerFired) {
+                for (let j = corporateDrones.length - 1; j >= 0; j--) {
+                    if (Math.hypot(b.x - corporateDrones[j].x, b.y - corporateDrones[j].y) < b.radius + corporateDrones[j].radius) {
+                        corporateDrones[j].hp -= b.damage; corporateDrones[j].statusMode = 'ALERT';
+                        firedProjectiles.splice(i, 1);
+                        triggerVisualDisplacement(4);
+                        if (corporateDrones[j].hp <= 0) {
+                            for(let k=0; k<15; k++) physicalParticles.push(new EngineParticle(corporateDrones[j].x, corporateDrones[j].y, '#ffaa00'));
+                            corporateDrones.splice(j, 1);
+                        }
+                        refreshInterfaceHUD(); break;
+                    }
+                }
+            } else {
+                if (!mainPlayer.ghostActive && Math.hypot(b.x - mainPlayer.x, b.y - mainPlayer.y) < b.radius + mainPlayer.radius) {
+                    mainPlayer.hp -= b.damage; refreshInterfaceHUD();
+                    firedProjectiles.splice(i, 1);
+                    triggerVisualDisplacement(10);
+                    if (mainPlayer.hp <= 0) { currentGameState = 'GAMEOVER'; document.getElementById('gameover-overlay').classList.remove('hidden'); }
+                }
+            }
+        }
+
+        for (let i = physicalParticles.length - 1; i >= 0; i--) {
+            physicalParticles[i].update(); if (physicalParticles[i].lifeSpan <= 0) physicalParticles.splice(i, 1);
+        }
+
+        for (let i = environmentalAcousticWaves.length - 1; i >= 0; i--) {
+            const wave = environmentalAcousticWaves[i]; wave.radius += 5.0;
+            if (wave.radius > wave.maxRadius) environmentalAcousticWaves.splice(i, 1);
+        }
+
+        mainCamera.x += (mainPlayer.x - canvas.width / 2 - mainCamera.x) * 0.08;
+        mainCamera.y += (mainPlayer.y - canvas.height / 2 - mainCamera.y) * 0.08;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.save(); 
+        // Execute Screen Displacement calculation transforms
+        if (engineScreenShakeMagnitude > 0.1) {
+            const shakeX = (Math.random() - 0.5) * engineScreenShakeMagnitude;
+            const shakeY = (Math.random() - 0.5) * engineScreenShakeMagnitude;
+            ctx.translate(shakeX, shakeY);
+            engineScreenShakeMagnitude *= 0.9;
+        }
+
+        ctx.translate(-mainCamera.x, -mainCamera.y);
+
+        // 1. RENDER CLEAN METROPOLIS GEOMETRY
+        for (let r = 0; r < worldGrid.length; r++) {
+            for (let c = 0; c < worldGrid[0].length; c++) {
+                const cellX = c * blockCellSize, cellY = r * blockCellSize;
+                if (worldGrid[r][c] === 1) {
+                    ctx.fillStyle = '#0a0b16'; ctx.fillRect(cellX, cellY, blockCellSize, blockCellSize);
+                    ctx.strokeStyle = '#161b36'; ctx.lineWidth = 1.5; ctx.strokeRect(cellX, cellY, blockCellSize, blockCellSize);
+                } else {
+                    ctx.fillStyle = '#010104'; ctx.fillRect(cellX, cellY, blockCellSize, blockCellSize);
+                    // Overlay subtle grid dots for path visual tracking guidance
+                    if (c % 2 === 0 && r % 2 === 0) {
+                        ctx.fillStyle = 'rgba(0, 243, 255, 0.03)';
+                        ctx.fillRect(cellX + blockCellSize/2 - 2, cellY + blockCellSize/2 - 2, 4, 4);
+                    }
+                }
+            }
+        }
+
+        // 2. RENDERING REMAINDER LAYERS
+        ghostTrails.forEach((t, idx) => {
+            ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.angle);
+            ctx.globalAlpha = t.alpha; ctx.fillStyle = '#8257e5';
+            ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            t.alpha -= 0.04; if (t.alpha <= 0) ghostTrails.splice(idx, 1);
+        });
+
+        environmentalAcousticWaves.forEach(w => {
+            ctx.save(); ctx.strokeStyle = 'rgba(255, 0, 85, 0.2)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+        });
+
+        corporateDrones.forEach(d => d.drawVisionWedge());
+
+        neonBillboards.forEach(b => {
+            ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = b.color; ctx.fillStyle = b.color;
+            ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+            ctx.fillText(b.text, b.x, b.y); ctx.restore();
+        });
+
+        mainframeTerminals.forEach(t => t.draw());
+        firedProjectiles.forEach(p => p.draw());
+        corporateDrones.forEach(d => d.draw());
+        physicalParticles.forEach(p => p.draw());
+        mainPlayer.draw();
+
+        if (targetedAssassinationObjective) {
+            ctx.save(); ctx.fillStyle = '#33ff33'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center';
+            ctx.shadowBlur = 12; ctx.shadowColor = '#33ff33';
+            ctx.fillText("[CLICK TO NEUTRALIZE CORE]", mainPlayer.x, mainPlayer.y - 28); ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    function handleWeaponTriggerFire() {
+        if (currentGameState !== 'PLAYING') return;
+
+        if (targetedAssassinationObjective) {
+            audioEngine.emit('assassinate');
+            triggerVisualDisplacement(6);
+            for(let k=0; k<25; k++) physicalParticles.push(new EngineParticle(targetedAssassinationObjective.x, targetedAssassinationObjective.y, '#33ff33'));
+            const index = corporateDrones.indexOf(targetedAssassinationObjective);
+            if (index > -1) corporateDrones.splice(index, 1);
+            targetedAssassinationObjective = null;
+            refreshInterfaceHUD();
+        } else {
+            if (mainPlayer.combatState !== 'READY' || mainPlayer.ghostActive) return;
+
+            const profile = WEAPON_PROFILES[mainPlayer.activeWeaponKey];
+            const now = Date.now();
+            if (now - mainPlayer.lastFiredTimestamp < profile.fireInterval) return;
+            mainPlayer.lastFiredTimestamp = now;
+
+            audioEngine.emit(mainPlayer.activeWeaponKey === 'PING_FLOOD' ? 'ping_flood' : 'stack_pump');
+            triggerVisualDisplacement(mainPlayer.activeWeaponKey === 'PING_FLOOD' ? 2 : 12);
+
+            for (let i = 0; i < profile.projectiles; i++) {
+                const spreadAngle = mainPlayer.angle + (Math.random() - 0.5) * profile.spread;
+                firedProjectiles.push(new WeaponBolt(mainPlayer.x, mainPlayer.y, spreadAngle, profile.speed, profile.damage, profile.color, true));
+            }
+
+            environmentalAcousticWaves.push({ x: mainPlayer.x, y: mainPlayer.y, radius: 10, maxRadius: profile.soundRadius });
+
+            corporateDrones.forEach(d => {
+                if (d.statusMode === 'PATROL' && Math.hypot(d.x - mainPlayer.x, d.y - mainPlayer.y) < profile.soundRadius) {
+                    d.statusMode = 'ALERT';
+                    for(let k=0; k<4; k++) physicalParticles.push(new EngineParticle(d.x, d.y, '#ff0055'));
+                }
+            });
+            refreshInterfaceHUD();
+        }
+    }
+
+    function mainAnimationPipelineLoop() { 
+        if (currentGameState === 'PLAYING') runCoreTickEngine(); 
+        requestAnimationFrame(mainAnimationPipelineLoop); 
+    }
+    
+    function canvasResize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+    window.addEventListener('resize', canvasResize);
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if (e.key === 'Escape' || key === 'p') {
+            e.preventDefault();
+            togglePauseSystem();
+            return;
+        }
+
+        if (currentGameState !== 'PLAYING') return;
+
+        if (key === 'w' || key === 'arrowup') physicalKeyMapping.w = true; 
+        if (key === 's' || key === 'arrowdown') physicalKeyMapping.s = true;
+        if (key === 'a' || key === 'arrowleft') physicalKeyMapping.a = true; 
+        if (key === 'd' || key === 'arrowright') physicalKeyMapping.d = true;
+        if (key === '1') { mainPlayer.executeWeaponSwap('PING_FLOOD'); refreshInterfaceHUD(); }
+        if (key === '2') { mainPlayer.executeWeaponSwap('STACK_PUMP'); refreshInterfaceHUD(); }
+        if (key === 'g') { mainPlayer.toggleGhostPhase(); refreshInterfaceHUD(); }
+    });
+    window.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        if (key === 'w' || key === 'arrowup') physicalKeyMapping.w = false; 
+        if (key === 's' || key === 'arrowdown') physicalKeyMapping.s = false;
+        if (key === 'a' || key === 'arrowleft') physicalKeyMapping.a = false; 
+        if (key === 'd' || key === 'arrowright') physicalKeyMapping.d = false;
+    });
+    window.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect(); 
+        mouseCoordinates.x = e.clientX - rect.left; 
+        mouseCoordinates.y = e.clientY - rect.top;
+        mouseCoordinates.worldX = mouseCoordinates.x + mainCamera.x; 
+        mouseCoordinates.worldY = mouseCoordinates.y + mainCamera.y;
+    });
+    window.addEventListener('mousedown', handleWeaponTriggerFire);
+
+    // Wire Core UI Interfaces
+    document.getElementById('inject-process-btn').addEventListener('click', () => {
+        syncSettingsUI('menu');
+        audioEngine.init(); 
+        document.getElementById('menu-overlay').classList.add('hidden'); 
+        launchStealthDistrict();
+    });
+    document.getElementById('resume-btn').addEventListener('click', () => {
+        togglePauseSystem();
+    });
+    document.getElementById('abort-btn').addEventListener('click', () => {
+        document.getElementById('pause-overlay').classList.add('hidden');
+        document.getElementById('menu-overlay').classList.remove('hidden');
+        currentGameState = 'MENU';
+    });
+    document.getElementById('restart-fail-btn').addEventListener('click', () => {
+        document.getElementById('gameover-overlay').classList.add('hidden'); launchStealthDistrict();
+    });
+    document.getElementById('restart-win-btn').addEventListener('click', () => {
+        document.getElementById('victory-overlay').classList.add('hidden'); launchStealthDistrict();
+    });
+
+    canvasResize(); 
+    requestAnimationFrame(mainAnimationPipelineLoop);
+</script>
+</body>
+</html>
