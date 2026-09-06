@@ -86,7 +86,3 @@ The moment you hit Spacebar for **KERNEL_PANIC**, the music instantly passes thr
 Upon purging the Root User in Stage 10, all synthetic music cuts out. A clean, solitary acoustic piano chord plays as the interface prints a final log: `Process finished with exit code 0.` The headphones return to the quiet sound of falling rain and a spinning computer fan.
 
 ---
-
-## 🏆 Why This Wins the Hackathon
-
-By ditching heavy video files and imagery, you build a game that is **lightweight, unbloated, and functionally bulletproof**. Judges will log into a game that loads in less than a second, handles thousands of moving entities at a flawless 60 FPS in a web browser, and relies on an incredible, high-intensity audio loop and punishing mechanical design to tell its story.
